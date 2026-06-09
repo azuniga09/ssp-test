@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¿Cómo juegas tu vida? — Smart Serious Play</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08080f;--surface:#111118;--card:#18181f;--border:#252530;
+  --accent:#f5c842;--accent2:#e84855;--accent3:#3a86ff;--green:#06d6a0;
+  --text:#f0f0f0;--muted:#6a6a7a;--radius:14px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;line-height:1.6;overflow-x:hidden}
+.hidden{display:none!important}
+.screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px}
+.eyebrow{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px}
+.eyebrow::before,.eyebrow::after{content:'';display:inline-block;width:20px;height:1px;background:var(--accent);opacity:.4}
+.bricks{display:flex;justify-content:center;gap:5px;margin-bottom:36px}
+.brick{width:26px;height:18px;border-radius:3px;position:relative}
+.brick::before{content:'';position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:13px;height:5px;border-radius:50%;background:inherit;filter:brightness(1.3)}
+.b1{background:#e84855}.b2{background:#f5c842}.b3{background:#3a86ff}.b4{background:#06d6a0}.b5{background:#ff6b35}.b6{background:#9b5de5}
+.start-btn{display:inline-block;background:var(--accent);color:#08080f;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;padding:17px 44px;border-radius:10px;border:none;cursor:pointer;transition:all .2s}
+.start-btn:hover{background:#ffd666;transform:translateY(-2px)}
+.btn{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;padding:12px 26px;border-radius:9px;cursor:pointer;border:none;transition:all .2s}
+.btn-primary{background:var(--accent);color:#08080f}
+.btn-primary:hover{background:#ffd666;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:var(--muted)}
+
+/* SETUP */
+.input-group{margin-bottom:20px;text-align:left}
+.input-group label{display:block;font-size:13px;color:var(--muted);margin-bottom:8px;font-weight:500}
+.input-group input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;color:var(--text);font-size:16px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s}
+.input-group input:focus{border-color:var(--accent)}
+.input-group input::placeholder{color:var(--muted)}
+.mode-toggle{display:flex;gap:10px;margin-bottom:24px}
+.mode-btn{flex:1;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;color:var(--muted);font-family:'Syne',sans-serif;font-weight:700;font-size:14px;transition:all .2s;text-align:center}
+.mode-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(245,200,66,.07)}
+
+/* RULES */
+.rules{display:flex;flex-direction:column;gap:12px;margin:24px 0;text-align:left}
+.rule{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:flex;gap:12px;align-items:flex-start}
+.rule-icon{font-size:20px;flex-shrink:0}
+.rule-text strong{display:block;font-size:14px;margin-bottom:2px}
+.rule-text span{font-size:13px;color:var(--muted)}
+
+/* PROGRESS */
+.prog-wrap{width:100%;max-width:600px;margin-bottom:16px}
+.prog-info{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;font-family:monospace}
+.prog-bar{height:3px;background:var(--border);border-radius:2px}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s ease}
+.xp-row{display:flex;align-items:center;gap:10px;margin-bottom:20px;width:100%;max-width:600px}
+.xp-label{font-size:11px;color:var(--accent);font-family:monospace;letter-spacing:1px;white-space:nowrap}
+.xp-bar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.xp-fill{height:100%;background:linear-gradient(90deg,var(--accent3),var(--accent));border-radius:3px;transition:width .5s ease}
+.xp-pts{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--accent);white-space:nowrap}
+.streak-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(245,200,66,.1);border:1px solid rgba(245,200,66,.3);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--accent);font-weight:600;margin-bottom:12px;opacity:0;transition:opacity .3s}
+.streak-badge.show{opacity:1}
+
+/* QUESTION CARD */
+.q-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:32px;width:100%}
+.q-tag{display:inline-block;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;border-radius:20px;margin-bottom:14px;font-weight:600}
+.q-tag.archetype{background:rgba(245,200,66,.1);color:var(--accent)}
+.q-tag.nonlinear{background:rgba(232,72,85,.1);color:var(--accent2)}
+.q-text{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;line-height:1.3;margin-bottom:24px}
+
+/* SSP CARD */
+.ssp-card-wrap{margin-bottom:20px;text-align:center}
+.ssp-card-label{font-size:11px;color:var(--accent2);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;font-weight:600}
+.ssp-card-img{width:100%;max-width:280px;border-radius:12px;border:2px solid var(--accent2);display:block;margin:0 auto;cursor:pointer;transition:transform .2s;box-shadow:0 8px 32px rgba(232,72,85,.2)}
+.ssp-card-img:hover{transform:scale(1.02)}
+.ssp-card-hint{font-size:12px;color:var(--muted);margin-top:8px}
+.card-flip-wrap{perspective:800px;width:100%;max-width:280px;margin:0 auto;height:180px;cursor:pointer}
+.card-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s}
+.card-inner.flipped{transform:rotateY(180deg)}
+.card-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:12px;overflow:hidden;border:2px solid var(--accent2)}
+.card-face img{width:100%;height:100%;object-fit:cover}
+.card-back{transform:rotateY(180deg)}
+
+/* TIMER */
+.timer-wrap{margin-bottom:16px}
+.timer-bar{height:8px;border-radius:4px;background:var(--border);overflow:hidden;margin-bottom:4px}
+.timer-fill{height:100%;border-radius:4px;transition:width 1s linear,background .5s}
+.timer-fill.green{background:var(--green)}
+.timer-fill.yellow{background:var(--accent)}
+.timer-fill.red{background:var(--accent2)}
+.timer-text{font-size:12px;color:var(--muted);font-family:monospace;text-align:right}
+
+/* OPTIONS */
+.options{display:flex;flex-direction:column;gap:8px}
+.option{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .2s;font-size:15px;color:var(--text);text-align:left}
+.option:hover{border-color:var(--accent);background:rgba(245,200,66,.04)}
+.option.selected{border-color:var(--accent);background:rgba(245,200,66,.08)}
+.opt-lbl{font-family:monospace;font-size:10px;color:var(--accent);min-width:22px;font-weight:600}
+.open-wrap textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;color:var(--text);font-size:15px;font-family:'Inter',sans-serif;outline:none;resize:none;height:100px;transition:border-color .2s;line-height:1.5}
+.open-wrap textarea:focus{border-color:var(--accent2)}
+.open-wrap textarea::placeholder{color:var(--muted)}
+.char-count{font-size:11px;color:var(--muted);text-align:right;margin-top:4px;font-family:monospace}
+.nav-row{display:flex;justify-content:space-between;align-items:center;margin-top:20px}
+
+/* ANALYZING */
+.analyzing-anim{width:72px;height:72px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--accent);animation:spin 1s linear infinite;margin:0 auto 20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* LEVEL UP */
+.level-circle{width:110px;height:110px;border-radius:50%;border:3px solid var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;animation:pulse 1.5s ease infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(245,200,66,.4)}50%{box-shadow:0 0 0 20px rgba(245,200,66,0)}}
+
+/* RESULT */
+.arch-header{text-align:center;margin-bottom:28px}
+.arch-emoji{font-size:56px;margin-bottom:10px;display:block}
+.arch-name{font-family:'Syne',sans-serif;font-size:40px;font-weight:800;line-height:1}
+.arch-tagline{color:var(--muted);font-size:16px;margin-top:6px}
+.nonlin-score{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px;text-align:center}
+.nonlin-num{font-family:'Syne',sans-serif;font-size:60px;font-weight:800;line-height:1}
+.nonlin-label{font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:1px;text-transform:uppercase}
+.nonlin-bar{height:8px;background:var(--border);border-radius:4px;margin:14px 0 6px;overflow:hidden}
+.nonlin-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent3),var(--accent2))}
+.result-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:14px}
+.result-card h3{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.result-card p{color:#c0c0cc;font-size:15px;line-height:1.7}
+.ai-insight{background:linear-gradient(135deg,rgba(58,134,255,.08),rgba(155,93,229,.08));border:1px solid rgba(58,134,255,.25);border-radius:var(--radius);padding:22px;margin-bottom:14px}
+.ai-insight h3{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);margin-bottom:8px}
+.scores-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.score-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 13px;display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.score-name{color:var(--muted)}
+.score-val{font-family:monospace;color:var(--accent);font-weight:600}
+.cta-box{background:var(--card);border:1px solid var(--accent);border-radius:var(--radius);padding:32px;text-align:center;margin-top:20px}
+.cta-box h2{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:8px}
+.cta-box .sub{color:var(--muted);margin-bottom:8px;font-size:15px;line-height:1.6}
+.cta-box .bold-line{color:var(--text);font-size:16px;font-weight:600;margin-bottom:22px}
+.price-pill{display:inline-block;background:rgba(245,200,66,.1);border:1px solid var(--accent);border-radius:8px;padding:6px 18px;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--accent);margin-bottom:16px}
+.btn-cta{display:block;width:100%;background:var(--accent);color:#08080f;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;padding:16px;border-radius:10px;border:none;cursor:pointer;transition:all .2s}
+.btn-cta:hover{background:#ffd666;transform:translateY(-2px)}
+
+/* RANKING */
+.rank-list{display:flex;flex-direction:column;gap:8px;margin-bottom:24px;width:100%}
+.rank-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:14px}
+.rank-item.gold{border-color:var(--accent)}
+.rank-item.silver{border-color:#aaa}
+.rank-item.bronze{border-color:#cd7f32}
+.rank-pos{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;min-width:32px;text-align:center}
+.rank-info{flex:1}
+.rank-name{font-weight:600;font-size:14px}
+.rank-arch{font-size:12px;color:var(--muted)}
+.rank-score{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:var(--accent)}
+.arch-dist{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:20px}
+.arch-chip{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px}
+.arch-chip span{color:var(--accent);font-weight:700}
+
+.meta-row{display:flex;gap:16px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.meta-pill{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--muted)}
+
+@media(max-width:480px){
+  .q-card{padding:20px}
+  .q-text{font-size:17px}
+  .scores-grid{grid-template-columns:1fr}
+  .arch-name{font-size:30px}
+  .nonlin-num{font-size:48px}
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="screen" id="screen-hero">
+  <div style="text-align:center;max-width:620px">
+    <div class="eyebrow">Smart Serious Play</div>
+    <div class="bricks">
+      <div class="brick b1"></div><div class="brick b2"></div><div class="brick b3"></div>
+      <div class="brick b4"></div><div class="brick b5"></div><div class="brick b6"></div>
+    </div>
+    <h1 style="font-family:'Syne',sans-serif;font-size:clamp(36px,8vw,68px);font-weight:800;line-height:1.05;letter-spacing:-2px;margin-bottom:18px">¿Cómo juegas<br><span style="color:var(--accent)">tu vida?</span></h1>
+    <p style="color:var(--muted);font-size:17px;max-width:460px;margin:0 auto 32px;line-height:1.7">Descubre tu Arquetipo de Jugador y tu Índice de No Linealidad con cartas SSP reales como restricciones creativas.</p>
+    <button class="start-btn" onclick="show('screen-setup')">Descubrir mi perfil →</button>
+    <div class="meta-row">
+      <div class="meta-pill">⏱ 8 min</div>
+      <div class="meta-pill">🃏 Cartas SSP</div>
+      <div class="meta-pill">🤖 IA incluida</div>
+      <div class="meta-pill">🎯 Para +40</div>
+    </div>
+  </div>
+</div>
+
+<!-- SETUP -->
+<div class="screen hidden" id="screen-setup">
+  <div style="max-width:460px;width:100%;text-align:center">
+    <div class="eyebrow">Antes de jugar</div>
+    <h2 style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;margin-bottom:8px">Elige tu nombre de jugador</h2>
+    <p style="color:var(--muted);margin-bottom:24px;font-size:15px">Tu identidad en el juego. No exponemos tu nombre real.</p>
+    <div class="input-group">
+      <label>Sobrenombre</label>
+      <input type="text" id="player-name" placeholder="Ej: Águila Veloz, Tormenta..." maxlength="30">
+    </div>
+    <div class="mode-toggle">
+      <div class="mode-btn active" id="btn-solo" onclick="setMode('solo')">🎯 Solo</div>
+      <div class="mode-btn" id="btn-group" onclick="setMode('group')">👥 Grupal</div>
+    </div>
+    <div id="room-input" class="input-group hidden">
+      <label>Código de sala</label>
+      <input type="text" id="room-code" placeholder="Ej: GUATE2025" maxlength="10" style="text-transform:uppercase">
+    </div>
+    <button class="start-btn" onclick="startGame()" style="width:100%">Entrar →</button>
+  </div>
+</div>
+
+<!-- TUTORIAL -->
+<div class="screen hidden" id="screen-tutorial">
+  <div style="max-width:520px;width:100%;text-align:center">
+    <div class="eyebrow">Cómo funciona</div>
+    <h2 style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:6px">Las reglas del juego</h2>
+    <div class="rules">
+      <div class="rule"><div class="rule-icon">🎯</div><div class="rule-text"><strong>Bloque 1 — Arquetipo (9 preguntas)</strong><span>Opción múltiple. Sin límite de tiempo. Responde con lo primero que sientas.</span></div></div>
+      <div class="rule"><div class="rule-icon">🃏</div><div class="rule-text"><strong>Bloque 2 — No Linealidad (6 preguntas)</strong><span>Una carta SSP aparece como restricción creativa. Tienes 90 segundos. Inspírate en la imagen.</span></div></div>
+      <div class="rule"><div class="rule-icon">⚡</div><div class="rule-text"><strong>Puntos y racha</strong><span>Más rápido y más original = más XP. Racha de 3 = bonus.</span></div></div>
+      <div class="rule"><div class="rule-icon">🤖</div><div class="rule-text"><strong>IA analiza tu creatividad</strong><span>Claude evalúa tus respuestas y calcula tu Índice de No Linealidad.</span></div></div>
+    </div>
+    <button class="start-btn" onclick="startQuestions()" style="width:100%">¡Comenzar! →</button>
+  </div>
+</div>
+
+<!-- QUESTION -->
+<div class="screen hidden" id="screen-question">
+  <div class="prog-wrap">
+    <div class="prog-info"><span id="prog-text">Pregunta 1 de 15</span><span id="prog-pct">0%</span></div>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+  <div class="xp-row">
+    <span class="xp-label">XP</span>
+    <div class="xp-bar"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+    <span class="xp-pts" id="xp-pts">0 pts</span>
+  </div>
+  <div class="streak-badge" id="streak-badge">🔥 <span id="streak-text">¡Racha!</span></div>
+  <div style="max-width:600px;width:100%">
+    <div class="q-card" id="q-card"></div>
+  </div>
+</div>
+
+<!-- ANALYZING -->
+<div class="screen hidden" id="screen-analyzing">
+  <div class="analyzing-anim"></div>
+  <h2 style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:8px">Analizando tu pensamiento...</h2>
+  <p style="color:var(--muted)">Claude está calculando tu Índice de No Linealidad</p>
+  <p style="color:var(--muted);font-size:13px;margin-top:10px">Tarda unos segundos ✨</p>
+</div>
+
+<!-- LEVEL UP -->
+<div class="screen hidden" id="screen-levelup">
+  <div class="level-circle"><span id="level-emoji" style="font-size:44px">🎮</span></div>
+  <h2 id="level-name" style="font-family:'Syne',sans-serif;font-size:34px;font-weight:800;color:var(--accent);margin-bottom:8px">Jugador Activo</h2>
+  <p id="level-desc" style="color:var(--muted);max-width:360px;text-align:center;margin-bottom:24px"></p>
+  <div style="font-family:'Syne',sans-serif;font-size:14px;color:var(--accent);margin-bottom:16px">⚡ <span id="total-pts-display">0</span> puntos totales</div>
+  <button class="start-btn" onclick="showResult()">Ver mi perfil completo →</button>
+</div>
+
+<!-- RESULT -->
+<div class="screen hidden" id="screen-result" style="align-items:flex-start">
+  <div style="max-width:640px;width:100%;padding:40px 0 80px">
+    <div class="eyebrow" style="margin-bottom:24px">Tu perfil de jugador</div>
+    <div class="arch-header">
+      <span class="arch-emoji" id="res-emoji"></span>
+      <div class="arch-name" id="res-name"></div>
+      <div class="arch-tagline" id="res-tagline"></div>
+    </div>
+    <div class="nonlin-score">
+      <div class="nonlin-num" id="res-nonlin-num">--</div>
+      <div class="nonlin-label">Índice de No Linealidad</div>
+      <div class="nonlin-bar"><div class="nonlin-fill" id="res-nonlin-bar" style="width:0%"></div></div>
+      <div style="font-size:14px;color:var(--muted);margin-top:6px" id="res-nonlin-desc"></div>
+    </div>
+    <div class="ai-insight hidden" id="ai-insight-box">
+      <h3>✨ Tu mensaje personal</h3>
+      <p id="ai-insight-text" style="color:#e0e0f0;font-size:16px;line-height:1.8;font-style:italic"></p>
+      <p style="font-size:12px;color:var(--muted);margin-top:12px">— Análisis personalizado basado en tus respuestas SSP</p>
+    </div>
+    <div class="result-card"><h3>Tu perfil</h3><p id="res-desc"></p></div>
+    <div class="result-card"><h3>Tu mayor fortaleza</h3><p id="res-strength"></p></div>
+    <div class="result-card"><h3>Tu punto ciego</h3><p id="res-blind"></p></div>
+    <div class="scores-grid" id="scores-grid"></div>
+    <div class="cta-box">
+      <h2>Lo que sientes tiene nombre.<br>Y tiene solución.</h2>
+      <p class="sub">No estás tarde. No perdiste el tren.<br>Solo nadie te enseñó a jugar este nivel del juego.</p>
+      <p class="bold-line">En 90 minutos juntos vas a salir con tu primer movimiento concreto.</p>
+      <div class="price-pill">Sesión de Detonación — $497 MXN</div><br>
+      <button class="btn-cta" onclick="window.open('https://wa.me/524772231434?text=Hola%2C%20hice%20el%20test%20SSP%20y%20quiero%20la%20Sesión%20de%20Detonación','_blank')">Quiero activarme ahora →</button>
+      <p style="font-size:12px;color:var(--muted);margin-top:12px">Solo 5 lugares disponibles esta semana · Sin compromisos</p>
+    </div>
+  </div>
+</div>
+
+<!-- RANKING -->
+<div class="screen hidden" id="screen-ranking" style="align-items:flex-start">
+  <div style="max-width:640px;width:100%;padding:40px 0 80px;text-align:center">
+    <div class="eyebrow">Modo Grupal</div>
+    <h2 style="font-family:'Syne',sans-serif;font-size:34px;font-weight:800;margin-bottom:6px">Ranking de la sala</h2>
+    <p style="color:var(--muted);margin-bottom:28px" id="rank-room-label"></p>
+    <div class="rank-list" id="rank-list"></div>
+    <div style="margin-bottom:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:2px">Arquetipos del grupo</div>
+    <div class="arch-dist" id="arch-dist"></div>
+    <button class="btn btn-primary" onclick="showResult()" style="margin-top:16px">Ver mi perfil completo →</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const FIREBASE_URL = 'https://smart-serious-play-test-default-rtdb.firebaseio.com';
+const ANTHROPIC_PROXY = 'https://us-central1-smart-serious-play-test.cloudfunctions.net/anthropicProxy';
+const ANTHROPIC_KEY = 'sk-ant-api03-e7vA0ozk1fDQGPiIs1mZRzjnLuAx2meWxDf';
+const BASE_IMG = 'https://drive.google.com/thumbnail?sz=w400&id=';
+
+// ============================================================
+// SSP CARDS (67 cartas — usamos frente como restricción visual)
+// ============================================================
+const sspCards = [
+  '1QqWNuU4ghhG6hCQn9r879AQf3JaZpLKP','1BRL-EuVCFbKLN-Sz3yjMQhYL1llAH3yx',
+  '1Ejqo_LI3Anq227d6saN7Z9WTj8aooh4E','1gEW2yeDjOFr2JCEVM-fNwzareYL6t9_g',
+  '1xAYJP5191Ht9bYYO4fYeo_NEUPZT_5EC','1FR0Eh6yL9fz06rtB-UqB8DhdsJgtbfK8',
+  '1hrzAutJO-Nd-jqqU2H_T4cjO0-botPi5','12QFVyfifi2RQJ0Oj8eRL7nlAGKVkkUA4',
+  '1hWVrDFw0E1Vkngls4_H4gfwoCH1h8UUo','1jJ1gRWFfVug86Kg1hs7DEQCVv0Ci1b6Q',
+  '1I0l1c97WqnxnjEr1Bu__y2w075qSH0-H','1yp3tjFC-fdtXksoTinWKA7D00SvdGbhz',
+  '15s1-dUyNt19Vb90oSQLhK7JhGLGM7o1f','1QZtaPnO545PW5J7UrKOUPjQ3hGqqp7s3',
+  '1s83AEqpWfo-XIvrEcuGMlxfiFO-Nv833','1wgPbKTpa6oVTXlZvW_mDU5yXy8avb1ui',
+  '1m9Y1DCfWvQ0gMWL8Ue57AP3Fbkc38KTY','1emLElIDrLUEL_tIdT1WgcMlQXqdsZMo5',
+  '13KGWC1Ahppz5Di7xJwIzuH-hSkdnDdR2','1rdsZ9rVaXjNgVlCHkPM5vXshNAwz2QUI',
+  '1rtjSrla7dNCRIkMIxsk5c2EcVBnt_5SK','1HwZjv6rdOugrmYtqZ_2sinWrhVUojrbu',
+  '1KG7J1zKXjgHlBpY4_qUFWfqCUOSw4KpM','1RiNEpzTFWo4N88tQcUZj_OLUBKjvwj2c',
+  '1B7Bn_5u-8B-h2N-inqCLvHDcQHXGamIv','1iOu_3aovw0w1ggv4dVFlxoVrUbQwfZ3d',
+  '1vAPZuP5lTrTDT07tRtu9fxOZfeyNVcMv','1pWRkHJ_r_AEVMUVQKMpdQCFMkIhxynX-',
+  '1st8N90-DIaH5XmywFa_fZN4P7BDp5dhX','1-DYtukFLYi8HzBObnn3U5Qk96lXp_uvZ',
+  '17ZzN3JY0241-mJIJlWn10j5smnL58Pa_','1mjTLV20HwTGaepSNF9rxOqtX0l3XtIQl',
+  '1nwbxl11B2ddYReMElij4MeudwD3aHTIH','1Ygfi-SOJwcrA2X_Rob6k31k8E1o-TEqN',
+  '1x3uqdnM0IiDOJ1gLPNPhwYfSbg3Zy-zE','16g2YlGEidNuUqxQNbBsPZ8r0OWRYJ7xY',
+  '15WcKn4hptBJjbSPkJSWnHI7jBey_VKI5','1E_QxozsZ_wMy4Wg4Df4QPvSToG6HtlYD',
+  '1mhu2aQmL3vN99Vzht_t8xK6q_1GML6II','1MxbV2Oa01lVDdbmA9uC6vGCCm1giVx4n',
+  '1TwAHH2st1AW40RamEOsvXDivtVxhPZfC','1aBW-oVx5qkptiVsY6zcgQ8oyrr362ZOZ',
+  '1WcV20xKLCvzUcDkvWfqGqRIBXdCNfspO','1KU5w9PdbnoMw5DSPoPnWFJpLfSKyKRaC',
+  '1XalxyiLf7D4ii52md3O0Q6KMXCzep76-','1NlbLzCVJ3ALkpdfmA4BpbEARKHLrKczP',
+  '1JqS3S0WXzsq1O40P-xg2FiiikdJ-U5Eg','1uozLSma0HaQH4c_tlUZYqdqNKWr_rijX',
+  '11D84g630Nh_Sh622x1Q2VaiTYld9sW8B','1YTKGG7BI2nH9HDaWQ-jpyCL4UH6wjcwN',
+  '1KQvmaEQKFP6aI0lsJpKlUmPS_exdp7i6','1j5Y4UiO0hNSsHz2UR4s9JLZpkYNmoXWC',
+  '1YaOVftO7BtDxcdP5M6zvR5z25ZPjdZOI','1nUOxmUAk2ngplsoqv1wIzVauTDg49urO',
+  '1_s8MHk3vjAX61xodWq0lAoDrHVEr_-QT','1T4TYrkZTpsORA0xWiSHFZckY1mCO-uiW',
+  '1coHSO7GR6ue8LPqqZmVryoqha5hlpXLU','1ZEtgEY31pCNYT8FRWhHyYFtY_b3YoP7w',
+  '1m3CCXssLrN43ZbS6Vms15DLcVtnJAx--','1vdt9aVUWtG16h-vJdAj8KLs07RATHjRP',
+  '1c9L9inMLSFmtAiM9YSKYDxmpV0s0_uRJ','1r0i0B5ZtWku6GIFYxwRSS9aK7jNed1ti',
+  '1em-Q1a35VWeSmcXHVuVa0itiK9WnWVLR','1ucUhsD8krgUspZnpmzks4Lw0QOJYMSg6',
+  '15kMAvfb6Q1apDjvhnI0XCO7fHuYWxFE3','1Mmt-7MRAw7eKV5AtUPCvI9OxHZfvBy7f',
+  '1jzBJyF2LTQmB4bHroOaC2X5C500NahAG'
+];
+
+const cardDescriptions = [
+  "Astronauta en el espacio rodeado de satélites y estrellas, con la Tierra y el cosmos de fondo. Categoría A, número 40, ícono de conexión en red.",
+  "Cleopatra en un templo egipcio con esculturas y arte egipcio. Categoría A, número 45, ícono de clic.",
+  "Figura de Buda en entorno sereno con árboles y templo. Categoría B, número 70, ícono de lupa.",
+  "Explorador con binoculares en bosque lleno de flora y fauna. Categoría B, número 105, ícono de nube con lluvia.",
+  "Personaje limpiando un baño con trapeador, balde y productos de limpieza. Categoría C, número 100, ícono de bombilla.",
+  "Piloto de Fórmula 1 en circuito profesional. Categoría C, número 55, ícono de crecimiento.",
+  "Surfista disfrutando una ola enorme en playa soleada con palmeras. Categoría D, número 15, ícono de birrete educación.",
+  "Carrusel giratorio en parque de diversiones lleno de personas con colores brillantes. Categoría D, número 60, ícono de corazón.",
+  "Médico realizando cirugía en quirófano moderno con tecnología avanzada. Categoría E, número 85, ícono de ondas médicas.",
+  "Personaje pensativo en avenida urbana tranquila rodeada de árboles y bancos. Categoría E, número 120, ícono de grupo personas.",
+  "Adulto y niño caminando juntos por un parque en tarde tranquila con tonos cálidos. Categoría F, número 35, ícono de ubicación.",
+  "Corredor al frente de una carrera en ciudad con Estatua de la Libertad y rascacielos al fondo. Categoría F, número 125, ícono de bicicleta.",
+  "Persona disfrutando pasta en entorno hogareño alegre con copa de vino. Categoría G, número 70, ícono de tren.",
+  "Abuelo leyendo en biblioteca acogedora con estanterías de libros e iluminación cálida. Categoría G, número 15, ícono de lluvia.",
+  "Mujer Maravilla sosteniendo lazo dorado en ambiente vibrante y lleno de acción. Categoría H, número 115, ícono de bombilla ideas.",
+  "Estación de tren animada con personas en andenes y tren llegando, elementos rurales al fondo. Categoría H, número 50, ícono de edificio ecológico.",
+  "Profesora en salón de clases tradicional con pizarra que dice EPCA, estudiantes atentos. Categoría I, número 45, ícono de birrete educación.",
+  "Chef cocinando en cocina bien equipada con ingredientes frescos y vapor sobre olla. Categoría I, número 60, ícono de corazón.",
+  "Grupo de palomas hechas de LEGO en plaza urbana. Categoría J, número 85, ícono de ondas señal.",
+  "Abeja revoloteando alrededor de flor brillante en campo de flores bajo sol radiante. Categoría J, número 120, ícono de grupo personas.",
+  "Turista junto a mesa con cámara y bebida, Torre Eiffel al fondo en entorno parisino. Categoría K, número 35, ícono de ubicación.",
+  "Persecución entre policía y ladrón en ciudad con patrulla policial al fondo. Categoría L, número 120, ícono de bicicleta.",
+  "Payaso triste sentado en entorno cálido con iluminación tenue evocando melancolía. Categoría M, número 70, ícono de tren.",
+  "Koala adulto abrazando a su cría en árbol con ambiente natural y luz suave. Categoría M, número 95, ícono de bombilla ideas.",
+  "Banquero en banco Serfin rodeado de dinero, monedas y ambiente financiero clásico. Categoría N, número 100, ícono de reloj tiempo.",
+  "Boda LEGO con pareja besándose bajo arco decorado con flores y luces cálidas. Categoría N, número 50, ícono de globo global.",
+  "Entorno steampunk con relojes, engranajes y figura observando reloj de arena. Categoría O, número 10, ícono de birrete educación.",
+  "Persona descendiendo en paracaídas colorido con cielo despejado y nubes. Categoría O, número 60, ícono de corazón.",
+  "Thomas Edison en laboratorio rodeado de bombillas, velas y equipo científico evocando invención. Categoría P, número 80, ícono de ondas tecnología.",
+  "Fotógrafo explorador con cámara, mochila de expedición y sombrero listo para capturar momentos. Categoría P, número 75, ícono de grupo personas.",
+  "Figura con maquillaje de catrina del Día de Muertos rodeada de cempasúchil y papel picado. Categoría Q, número 15, ícono de ubicación.",
+  "Pueblo europeo alemán con casas tradicionales, calles adoquinadas y bicicletas, ambiente acogedor. Categoría Q, número 120, ícono de bicicleta.",
+  "Buzo explorando arrecife lleno de corales y delfines en entorno submarino vibrante. Categoría R, número 65, ícono de tren movilidad.",
+  "Chef preparando variedad de especias en arreglo colorido y ordenado, creatividad culinaria. Categoría R, número 100, ícono de bombilla ideas.",
+  "Pirata con loro en hombro frente a barco con velas de calavera en entorno tropical. Categoría S, número 105, ícono de reloj tiempo.",
+  "Pelé jugador de fútbol brasileño en estadio lleno de espectadores con banderas de Brasil, número 10. Categoría S, número 50, ícono de globo global.",
+  "Stephen Hawking en silla de ruedas con fondo de galaxias y ecuaciones astronómicas. Categoría T, número 120, ícono de red conexión.",
+  "Juana de Arco con armadura, espada y bandera cruzada como líder histórica. Categoría T, número 65, ícono de clic acción.",
+  "Nikola Tesla en laboratorio futurista rodeado de bobinas y dispositivos eléctricos. Categoría U, número 80, ícono de lupa descubrimiento.",
+  "Mahatma Gandhi con bastón, vestimenta tradicional y rueca simbolizando resistencia pacífica. Categoría U, número 125, ícono de ubicación.",
+  "Albert Einstein en ambiente académico rodeado de fórmulas matemáticas en pizarrón. Categoría V, número 185, ícono de bicicleta.",
+  "Steve Jobs con suéter negro y gafas con fondo de tecnología e innovación móvil. Categoría V, número 120, ícono de tren movilidad.",
+  "Marilyn Monroe en pose icónica con vestido blanco en calle vibrante con personajes LEGO. Categoría X, número 70, ícono de foco.",
+  "Charles Chaplin con bastón y sombrero de bombín en fondo minimalista clásico. Categoría X, número 100, ícono de reloj.",
+  "Tienda de motocicletas de alta gama con personajes LEGO examinando modelos bajo luces brillantes. Categoría Y, número 100, ícono de globo terráqueo.",
+  "Intersección de ciudad moderna con multitud de figuras LEGO cruzando calle y edificios altos. Categoría Y, número 45, ícono de red.",
+  "Joven pianista en teatro iluminado frente a piano de cola en escenario central. Categoría Z, número 25, ícono de clic.",
+  "Soldado en entorno desértico junto a perro militar, vehículo militar y sacos de arena al fondo. Categoría Z, número 55, ícono de lupa.",
+  "Fotógrafo sosteniendo cámara profesional con lente destacado en fondo minimalista. Categoría A, número 80, ícono de lluvia.",
+  "Carpintero con casco y overol sosteniendo martillo rodeado de clavos y piezas de madera en taller. Categoría A, número 125, ícono de bombilla.",
+  "Bombero equipado con uniforme y casco con mangueras, extintores y camiones al fondo. Categoría E, número 180, ícono de edificio verde.",
+  "Piloto dentro de cabina de avión rodeado de instrumentos de vuelo con cielo despejado. Categoría E, número 120, ícono de bombilla.",
+  "Hombre en traje formal observándose en espejo que refleja expresión diferente, contraste psicológico. Categoría I, número 15, ícono de reloj.",
+  "Dos automóviles chocando en intersección con casas de colores, semáforos y ladrillos LEGO dispersos. Categoría O, número 100, ícono de globo terráqueo.",
+  "Alpinista celebrando en cima de montaña nevada rodeada de picos elevados y cielo azul. Categoría O, número 105, ícono de red.",
+  "Cineasta grabando escena en set animado con cámara profesional e iluminación dinámica. Categoría U, número 55, ícono de clic.",
+  "Celda de prisión LEGO con prisionero en uniforme a rayas con cama, escritorio y barrotes. Categoría U, número 120, ícono de investigación.",
+  "El hombre invisible en entorno urbano con edificios, traje oscuro y sombrero sin rostro visible. Categoría A, número 60, ícono de clima.",
+  "Joven explorador acompañado de león en entorno selvático con plantas exóticas y rocas. Categoría A, número 85, ícono de idea.",
+  "Cofre del tesoro lleno de monedas y joyas en playa tropical con barco pirata al fondo. Categoría E, número 120, ícono de sustentabilidad.",
+  "Astronautas y rover explorando paisaje lunar con planeta Tierra visible al fondo. Categoría E, número 45, ícono educativo.",
+  "Jardinero LEGO plantando árbol en jardín con herramientas y macetas alrededor. Categoría I, número 120, ícono de salud y naturaleza.",
+  "Monja LEGO frente a iglesia con ambiente tranquilo y espiritual, rodeada de jardines. Categoría O, número 70, ícono de conexión espiritual.",
+  "Hombre Araña en entorno urbano nocturno encaramado en edificio con rascacielos iluminados. Categoría U, número 105, ícono de trabajo en equipo.",
+  "Minifigura pintando cuadro colorido en caballete en estudio de arte con herramientas artísticas. Categoría A, número 100, ícono de creatividad.",
+  "Globo aerostático de colores vibrantes en LEGO flotando sobre campos al amanecer. Categoría E, número 50, ícono de entretenimiento y creatividad.",
+  "Freddie Mercury en escenario LEGO lleno de luces sosteniendo micrófono ante público animado con banda. Categoría I, número 50, ícono de entretenimiento y creatividad."
+];
+
+function getRandomCards(n){
+  const indices=[...Array(sspCards.length).keys()].sort(()=>Math.random()-.5).slice(0,n);
+  return {
+    ids: indices.map(i=>sspCards[i]),
+    descs: indices.map(i=>cardDescriptions[i])
+  };
+}
+
+// ============================================================
+// DATA
+// ============================================================
+const archetypes = [
+  {name:'El Conquistador',emoji:'🏆',color:'#f5c842',tagline:'Naciste para ganar',desc:'Cuando tienes una meta, no paras. Tu energía es contagiosa. Sin meta clara, te apagas.',strength:'Tu capacidad de ejecución con dirección clara es extraordinaria.',blind:'Necesitas metas externas para activarte. Generarte tus propias metas es tu siguiente nivel.'},
+  {name:'El Descubridor',emoji:'🔭',color:'#3a86ff',tagline:'El mundo es tu laboratorio',desc:'Aprendes rápido, conectas ideas de campos distintos. Lo nuevo siempre gana contra lo que empezaste.',strength:'Ves oportunidades donde otros no. Tu capacidad de adaptarte es tu ventaja real.',blind:'La profundidad. Sabes un poco de mucho. Ahí está tu dinero.'},
+  {name:'El Conector',emoji:'🤝',color:'#06d6a0',tagline:'Tu red es tu poder',desc:'Las relaciones son tu moneda. Tu agenda vale más de lo que crees pero probablemente no la monetizas.',strength:'Puedes abrir puertas que otros ni saben que existen.',blind:'Te cuesta convertir relaciones en negocios. Esa creencia te está costando caro.'},
+  {name:'El Retador',emoji:'⚔️',color:'#e84855',tagline:'La competencia te enciende',desc:'Necesitas un rival para despertar. Cuando alguien avanza, tú aceleras.',strength:'En momentos de crisis das tu mejor versión.',blind:'Sin competencia te relajas demasiado. Aprende a ser tu propio rival.'},
+  {name:'El Soñador Paralizado',emoji:'💭',color:'#9b5de5',tagline:'Las ideas te sobran, el arranque te falta',desc:'Tienes ideas que valen millones guardadas. El problema no es creatividad — es que el primer paso siempre se siente enorme.',strength:'Tu capacidad de generar ideas y ver posibilidades es genuinamente extraordinaria.',blind:'Prefieres no lanzar a lanzar algo imperfecto. No es perfeccionismo, es miedo disfrazado.'},
+  {name:'El Experto Invisible',emoji:'🎓',color:'#ff6b35',tagline:'Sabes más de lo que cobras',desc:'Años de experiencia real ayudando a otros. Pero algo siente que no es suficiente para cobrar lo que vale.',strength:'Tu conocimiento es real y profundo. No es autopercepción.',blind:'Cobras lo que crees valer, no lo que realmente vales.'},
+  {name:'El Reinventador',emoji:'🔄',color:'#06d6a0',tagline:'Tu mejor jugada está por venir',desc:'Ya tuviste un capítulo de éxito. Lo dejaste o lo perdiste. Ahora estás entre lo que fuiste y lo que puedes ser.',strength:'Ya sabes cómo se siente construir algo desde cero. Eso no te lo quita nadie.',blind:'Compararte con tu versión anterior. El segundo acto no tiene que parecerse al primero.'},
+  {name:'El Acumulador',emoji:'📚',color:'#f5c842',tagline:'Sabes todo, aplicas poco',desc:'Tu biblioteca mental es impresionante. Pero el conocimiento se convirtió en una forma de evitar actuar.',strength:'Cuando aplicas algo, lo haces con una profundidad que otros no tienen.',blind:'El próximo curso no te dará el permiso que buscas. Ya tienes suficiente para arrancar.'},
+  {name:'El Solitario Creativo',emoji:'🎨',color:'#3a86ff',tagline:'Genial solo, poderoso en equipo',desc:'Tu mejor trabajo lo produces en soledad. Tienes un mundo interior rico y una forma de ver genuinamente única.',strength:'Tu profundidad creativa y autonomía son invaluables.',blind:'Lo que haces solo vale X. Con las personas correctas a tu lado, vale 10X.'},
+];
+
+const archetypeQs = [
+  {text:'Cuando tienes una meta clara, ¿qué tan difícil te es detenerte hasta lograrla?',opts:['Casi nunca me detiene nada','Me cuesta pero lo manejo','Depende de la meta','Me distraigo con frecuencia','Rara vez llego al final']},
+  {text:'¿Con qué frecuencia abandonas algo que aprendes porque encontraste algo más interesante?',opts:['Todo el tiempo, es mi patrón','Bastante seguido','A veces me pasa','Casi nunca','Termino todo lo que empiezo']},
+  {text:'¿Qué tan fácil te resulta generar relaciones nuevas en cualquier entorno?',opts:['Es mi superpoder natural','Lo hago bien cuando me lo propongo','Depende del contexto','Me cuesta bastante','Prefiero evitarlo']},
+  {text:'¿Necesitas sentir que estás superando a alguien para motivarte de verdad?',opts:['Sí, la competencia me enciende','Me ayuda pero no es esencial','Me motivo solo, sin comparar','La competencia me bloquea','Prefiero colaborar que competir']},
+  {text:'¿Cuántas ideas tienes guardadas que nunca has ejecutado?',opts:['Demasiadas, pierdo la cuenta','Varias, me pesan','Algunas, las voy procesando','Pocas, ejecuto la mayoría','Casi ninguna sin ejecutar']},
+  {text:'¿Con qué frecuencia ayudas a otros gratis con conocimiento por el que deberías cobrar?',opts:['Siempre, no sé cómo cobrar','Muy seguido','A veces, estoy trabajando en eso','Casi nunca','Tengo mis límites claros']},
+  {text:'¿Has tenido éxito en algo que dejaste atrás y aún no sabes bien por qué?',opts:['Sí, y todavía me pesa','Sí, aunque ya lo superé','Más o menos, fue una decisión','No realmente','No, siempre sé por qué decido']},
+  {text:'¿Cuántos cursos, libros o recursos tienes sin terminar en este momento?',opts:['Muchos, es mi patrón','Bastantes','Algunos','Pocos','Termino lo que empiezo']},
+  {text:'¿Prefieres trabajar solo aunque eso signifique avanzar más lento?',opts:['Siempre solo, es como funciono','Prefiero solo pero acepto ayuda','Depende del proyecto','Prefiero colaborar','Siempre busco equipo']},
+];
+
+const nonlinearQs = [
+  {text:'Usando esta carta SSP como inspiración, describe tu negocio o proyecto ideal como si fuera un animal. Sé específico y original.',prompt:'Evalúa pensamiento no lineal considerando la carta SSP mostrada. CALIBRACIÓN: Respuesta lineal (20-35%): "un perro fiel y trabajador" o "un águila que vuela alto". Respuesta media (40-60%): usa el animal con alguna característica específica del negocio. Respuesta no lineal (65-85%): conecta características inesperadas del animal con el modelo de negocio. Respuesta altamente no lineal (86-100%): el animal elegido es inesperado, la conexión es profunda y específica, usa características únicas del animal que nadie más pensaría. Premia: metáforas inesperadas, conexiones entre el animal y la carta SSP, especificidad real. Penaliza: clichés (águila=liderazgo, perro=fidelidad), respuestas genéricas, ignorar la carta. Responde SOLO JSON: {"score":0-100,"feedback":"feedback motivador en español de una línea"}'},
+  {text:'Esta carta SSP es tu restricción creativa. Usando lo que ves en ella, explica tu mayor habilidad de una forma que nadie más lo diría.',prompt:'Evalúa pensamiento no lineal. CALIBRACIÓN: Lineal (20-35%): describe la habilidad directamente sin conectar con la carta. Media (40-60%): conecta la carta con la habilidad de forma obvia. No lineal (65-85%): la conexión entre carta y habilidad es inesperada y creativa. Altamente no lineal (86-100%): la metáfora es completamente original, nadie más lo diría así, la carta SSP se usa de forma sorprendente. Responde SOLO JSON: {"score":0-100,"feedback":"feedback motivador en español de una línea"}'},
+  {text:'Deja que esta carta SSP te inspire. ¿Qué tiene en común tu mayor fracaso con tu mayor logro? Encuentra el hilo invisible.',prompt:'Evalúa profundidad y no linealidad. CALIBRACIÓN: Lineal (20-35%): "los dos me enseñaron algo". Media (40-60%): identifica un patrón específico pero predecible. No lineal (65-85%): el hilo invisible es inesperado y conecta con la carta SSP. Altamente no lineal (86-100%): revela una conexión sistémica profunda que sorprende, usa la carta como metáfora de esa conexión. Responde SOLO JSON: {"score":0-100,"feedback":"feedback motivador en español de una línea"}'},
+  {text:'Esta carta es el poster de tu próxima gran aventura. Descríbela como si fuera una película: género, protagonista y villano.',prompt:'Evalúa creatividad y no linealidad. CALIBRACIÓN: Lineal (20-35%): género obvio, villano genérico (el miedo, la duda). Media (40-60%): género interesante pero villano predecible. No lineal (65-85%): género inesperado que conecta con la carta, villano específico y original. Altamente no lineal (86-100%): la película entera es una metáfora sorprendente de su situación real, el villano es completamente inesperado. Responde SOLO JSON: {"score":0-100,"feedback":"feedback motivador en español de una línea"}'},
+  {text:'Observa bien esta carta SSP. Déjate inspirar y responde: si el dinero no existiera, ¿qué harías mañana exactamente?',prompt:'Evalúa autenticidad y pensamiento no lineal. CALIBRACIÓN: Lineal (20-35%): respuesta cliché ("viajaría", "ayudaría a los demás"). Media (40-60%): respuesta específica pero predecible. No lineal (65-85%): respuesta muy específica y conectada con la carta SSP. Altamente no lineal (86-100%): respuesta completamente inesperada, muy específica, que conecta con la carta de forma sorprendente y revela algo genuino y único de la persona. Responde SOLO JSON: {"score":0-100,"feedback":"feedback motivador en español de una línea"}'},
+  {text:'Esta carta es tu mensaje al pasado. ¿Qué le dirías a tu versión de hace 10 años en exactamente 7 palabras?',prompt:'Evalúa profundidad y originalidad en exactamente 7 palabras. CALIBRACIÓN: Lineal (20-35%): "todo va a estar bien, no te preocupes" o similares clichés motivacionales. Media (40-60%): consejo específico pero predecible. No lineal (65-85%): 7 palabras densas de significado, conectadas con la carta SSP. Altamente no lineal (86-100%): las 7 palabras son completamente inesperadas, contienen una verdad profunda y específica que nadie más diría, usan la carta como inspiración de forma sorprendente. Responde SOLO JSON: {"score":0-100,"feedback":"feedback motivador en español de una línea"}'},
+];
+
+const levels = [
+  {name:'Jugador Dormido',emoji:'😴',desc:'Tu potencial está ahí pero algo lo tiene en pausa. Estás a punto de despertar.',min:0},
+  {name:'Jugador Despertando',emoji:'👀',desc:'Algo en ti se está moviendo. El juego apenas comienza.',min:300},
+  {name:'Jugador Activo',emoji:'⚡',desc:'Estás encendido. Tu mente opera en un nivel que pocos alcanzan.',min:600},
+  {name:'Jugador Detonado',emoji:'🚀',desc:'Nivel máximo. Eres exactamente el tipo de jugador que puede cambiar su historia.',min:900},
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  playerName:'',mode:'solo',roomCode:'',
+  currentQ:0,answers:[],openAnswers:[],
+  xp:0,streak:0,
+  nlScores:[],nlFeedbacks:[],finalNL:0,aiInsight:'',
+  timerInterval:null,timeLeft:90,
+  sessionId:null,selectedCards:[],selectedCardDescs:[],
+};
+
+// ============================================================
+// UTILS
+// ============================================================
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function setMode(m){
+  state.mode=m;
+  document.getElementById('btn-solo').classList.toggle('active',m==='solo');
+  document.getElementById('btn-group').classList.toggle('active',m==='group');
+  document.getElementById('room-input').classList.toggle('hidden',m==='solo');
+}
+
+function startGame(){
+  const name=document.getElementById('player-name').value.trim();
+  if(!name){alert('Por favor escribe tu nombre de jugador');return}
+  state.playerName=name;
+  state.roomCode=state.mode==='group'?document.getElementById('room-code').value.trim().toUpperCase():'';
+  state.sessionId='s_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
+  const cards=getRandomCards(6);
+  state.selectedCards=cards.ids;
+  state.selectedCardDescs=cards.descs;
+  show('screen-tutorial');
+}
+
+function startQuestions(){
+  state.currentQ=0;state.answers=[];state.openAnswers=[];
+  state.xp=0;state.streak=0;state.nlScores=[];state.nlFeedbacks=[];
+  show('screen-question');
+  renderQuestion();
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function renderQuestion(){
+  const q=state.currentQ;
+  const total=15;
+  const pct=Math.round((q/total)*100);
+  document.getElementById('prog-text').textContent=`Pregunta ${q+1} de ${total}`;
+  document.getElementById('prog-pct').textContent=pct+'%';
+  document.getElementById('prog-fill').style.width=pct+'%';
+
+  const card=document.getElementById('q-card');
+
+  if(q<9){
+    // ARCHETYPE QUESTION
+    const qd=archetypeQs[q];
+    card.innerHTML=`
+      <div class="q-tag archetype">🎯 Arquetipo · Pregunta ${q+1}/9</div>
+      <div class="q-text">${qd.text}</div>
+      <div class="options">${qd.opts.map((o,i)=>`<div class="option" onclick="selectArch(${i})" id="opt-${i}"><span class="opt-lbl">0${i+1}</span>${o}</div>`).join('')}</div>
+      <div class="nav-row">
+        ${q>0?'<button class="btn btn-ghost" onclick="prevQ()">← Atrás</button>':'<div></div>'}
+        <button class="btn btn-primary" onclick="this.disabled=true;nextQ()" id="btn-next" disabled>Siguiente →</button>
+      </div>`;
+  } else {
+    // NONLINEAR QUESTION WITH SSP CARD
+    const nlIdx=q-9;
+    const qd=nonlinearQs[nlIdx];
+    const cardId=state.selectedCards[nlIdx];
+    const imgUrl=BASE_IMG+cardId;
+    card.innerHTML=`
+      <div class="q-tag nonlinear">🃏 No Linealidad · Pregunta ${nlIdx+1}/6</div>
+      <div class="ssp-card-wrap">
+        <div class="ssp-card-label">🃏 Tu carta SSP — úsala como inspiración</div>
+        <img src="${imgUrl}" class="ssp-card-img" alt="Carta SSP ${nlIdx+1}" onerror="this.style.display='none'">
+        <div class="ssp-card-hint">Toca la carta para ampliarla</div>
+      </div>
+      <div class="q-text">${qd.text}</div>
+      <div class="timer-wrap">
+        <div class="timer-bar"><div class="timer-fill green" id="timer-fill" style="width:100%"></div></div>
+        <div class="timer-text" id="timer-text">90s restantes</div>
+      </div>
+      <div class="open-wrap">
+        <textarea id="open-ans" placeholder="Inspírate en la carta y escribe aquí..." oninput="updateChar()" onkeyup="checkOpen()"></textarea>
+        <div class="char-count" id="char-count">0 caracteres</div>
+      </div>
+      <div class="nav-row">
+        <div style="font-size:12px;color:var(--muted)">⚡ Zona verde = más puntos</div>
+        <button class="btn btn-primary" onclick="submitOpen()" id="btn-next" disabled>Siguiente →</button>
+      </div>`;
+
+    // Image expand on click
+    card.querySelector('.ssp-card-img')?.addEventListener('click',()=>{
+      window.open(imgUrl,'_blank');
+    });
+
+    startTimer();
+  }
+}
+
+function selectArch(i){
+  document.querySelectorAll('.option').forEach(o=>o.classList.remove('selected'));
+  const opt=document.getElementById('opt-'+i);
+  if(opt)opt.classList.add('selected');
+  state._sel=i;
+  const btn=document.getElementById('btn-next');
+  if(btn)btn.disabled=false;
+}
+
+function updateChar(){
+  const v=document.getElementById('open-ans').value;
+  document.getElementById('char-count').textContent=v.length+' caracteres';
+}
+
+function checkOpen(){
+  const v=document.getElementById('open-ans').value.trim();
+  document.getElementById('btn-next').disabled=v.length<10;
+}
+
+// ============================================================
+// TIMER
+// ============================================================
+function startTimer(){
+  state.timeLeft=90;
+  clearInterval(state.timerInterval);
+  state.timerInterval=setInterval(()=>{
+    state.timeLeft--;
+    const pct=(state.timeLeft/90)*100;
+    const fill=document.getElementById('timer-fill');
+    const txt=document.getElementById('timer-text');
+    if(fill){
+      fill.style.width=pct+'%';
+      if(state.timeLeft>60)fill.className='timer-fill green';
+      else if(state.timeLeft>30)fill.className='timer-fill yellow';
+      else fill.className='timer-fill red';
+      txt.textContent=state.timeLeft+'s restantes';
+    }
+    if(state.timeLeft<=0){clearInterval(state.timerInterval);autoSubmit()}
+  },1000);
+}
+
+function autoSubmit(){
+  const v=document.getElementById('open-ans')?.value.trim()||'';
+  state.openAnswers.push({text:v||'[Sin respuesta]',timeUsed:90,zone:'blocked'});
+  addXP(0);
+  advance();
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function nextQ(){
+  clearInterval(state.timerInterval);
+  if(state._processingNext)return;
+  state._processingNext=true;
+  if(state.currentQ<9){
+    if(state._sel===undefined){state._processingNext=false;return}
+    const score=5-state._sel;
+    state.answers.push(score);
+    addXP(50+score*10);
+    state._sel=undefined;
+  }
+  advance();
+  state._processingNext=false;
+}
+
+function submitOpen(){
+  clearInterval(state.timerInterval);
+  const v=document.getElementById('open-ans').value.trim();
+  const used=90-state.timeLeft;
+  let zone=state.timeLeft>60?'green':state.timeLeft>30?'yellow':'red';
+  state.openAnswers.push({text:v,timeUsed:used,zone});
+  const bonus=zone==='green'?100:zone==='yellow'?60:30;
+  addXP(bonus);
+  advance();
+}
+
+function prevQ(){
+  if(state.currentQ>0){state.currentQ--;state.answers.pop();renderQuestion()}
+}
+
+function advance(){
+  state.currentQ++;
+  state.streak++;
+  checkStreak();
+  if(state.currentQ>=15){finishTest();return}
+  renderQuestion();
+}
+
+// ============================================================
+// XP & STREAK
+// ============================================================
+function addXP(pts){
+  state.xp+=pts;
+  const maxXP=1500;
+  const pct=Math.min((state.xp/maxXP)*100,100);
+  document.getElementById('xp-fill').style.width=pct+'%';
+  document.getElementById('xp-pts').textContent=state.xp+' pts';
+}
+
+function checkStreak(){
+  if(state.streak>0&&state.streak%3===0){
+    const badge=document.getElementById('streak-badge');
+    document.getElementById('streak-text').textContent=`¡${state.streak} seguidas! +50 XP`;
+    badge.classList.add('show');
+    state.xp+=50;
+    document.getElementById('xp-pts').textContent=state.xp+' pts';
+    setTimeout(()=>badge.classList.remove('show'),2500);
+  }
+}
+
+// ============================================================
+// FINISH & AI
+// ============================================================
+async function finishTest(){
+  show('screen-analyzing');
+  try{
+    const res=await analyzeNL();
+    state.nlScores=res.scores;
+    state.nlFeedbacks=res.feedbacks;
+    state.finalNL=Math.round(res.scores.reduce((a,b)=>a+b,0)/Math.max(res.scores.length,1));
+    state.aiInsight=res.insight;
+  }catch(e){
+    state.finalNL=Math.round(50+Math.random()*20);
+    state.aiInsight='Tu pensamiento muestra patrones creativos únicos que vale la pena explorar más profundamente.';
+  }
+  await saveFirebase();
+  showLevelUp();
+}
+
+async function analyzeNL(){
+  const scores=[];const feedbacks=[];
+  for(let i=0;i<state.openAnswers.length;i++){
+    const qa=state.openAnswers[i];
+    const cardDesc=state.selectedCardDescs?.[i]||'Carta SSP sin descripción';
+    if(!qa.text||qa.text==='[Sin respuesta]'){scores.push(10);feedbacks.push('No respondiste esta pregunta.');continue}
+    try{
+      const resp=await fetch('https://us-central1-smart-serious-play-test.cloudfunctions.net/anthropicProxy',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'claude-haiku-4-5-20251001',
+          max_tokens:200,
+          system:`Eres experto en creatividad y pensamiento no lineal. Evalúa qué tan no lineal y creativa es la respuesta de esta persona considerando la carta SSP que tenía como restricción visual. La carta SSP es: "${cardDesc}". ${nonlinearQs[i].prompt} Penaliza respuestas genéricas que ignoran la carta. Premia conexiones inesperadas entre la carta y la respuesta. Valora profundidad conceptual sobre superficialidad llamativa.`,
+          messages:[{role:'user',content:`Respuesta: "${qa.text}"\nTiempo usado: ${qa.timeUsed}s de 90. Zona: ${qa.zone}`}]
+        })
+      });
+      const data=await resp.json();
+      const txt=data.content[0].text;
+      const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
+      const timeBonus=qa.zone==='green'?12:qa.zone==='yellow'?6:0;
+      scores.push(Math.min(100,parsed.score+timeBonus));
+      feedbacks.push(parsed.feedback);
+    }catch(e){scores.push(50);feedbacks.push('Respuesta procesada.')}
+  }
+  // Personalized motivational message
+  const dominantIdx=getDominant();
+  const arch=archetypes[dominantIdx];
+  const nlLevel=scores.reduce((a,b)=>a+b,0)/Math.max(scores.length,1)>=75?'alto (75-100%)':scores.reduce((a,b)=>a+b,0)/Math.max(scores.length,1)>=50?'medio (50-74%)':'bajo (0-49%)';
+  let insight='Tu pensamiento muestra patrones creativos únicos que vale la pena explorar más profundamente.';
+  try{
+    const all=state.openAnswers.map((qa,i)=>`Pregunta ${i+1}: "${qa.text}"`).join('\n');
+    const resp=await fetch('https://us-central1-smart-serious-play-test.cloudfunctions.net/anthropicProxy',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-haiku-4-5-20251001',
+        max_tokens:300,
+        system:`Eres Alejandro Zúñiga, doctor en creatividad e innovación y creador del Smart Serious Play. Escribes mensajes motivadores profundos para personas de 40+ años que acaban de descubrir su arquetipo de jugador.
+
+Tu estilo: directo, empático, sin clichés motivacionales baratos. Hablas de frente, como alguien que realmente ve a la persona. No usas frases como "eres increíble" o "el cielo es el límite". Eres honesto y específico.
+
+La persona acaba de completar el test SSP. Su arquetipo dominante es: ${arch.name} (${arch.tagline}). Su índice de no linealidad es: ${nlLevel}.
+
+Basándote en sus respuestas reales a las restricciones creativas SSP, escribe un mensaje motivador personalizado de exactamente 3-4 oraciones que:
+1. Refleje algo específico de sus respuestas — no genérico
+2. Nombre su mayor fortaleza oculta con honestidad
+3. Le diga exactamente qué sigue sin rodeos
+4. Termine con una frase que se quede grabada
+
+Escribe solo el mensaje, sin etiquetas ni introducción.`,
+        messages:[{role:'user',content:`Arquetipo: ${arch.name}\nÍndice de no linealidad: ${nlLevel}\nRespuestas del participante:\n${all}`}]
+      })
+    });
+    const data=await resp.json();
+    insight=data.content[0].text;
+  }catch(e){}
+  return{scores,feedbacks,insight};
+}
+
+// ============================================================
+// FIREBASE
+// ============================================================
+async function saveFirebase(){
+  const idx=getDominant();
+  const record={
+    playerName:state.playerName,sessionId:state.sessionId,
+    roomCode:state.roomCode||null,mode:state.mode,
+    archetype:archetypes[idx].name,archetypeIdx:idx,
+    nonlinearIndex:state.finalNL,archetypeScores:state.answers,
+    nlScores:state.nlScores,totalXP:state.xp,
+    timestamp:Date.now(),date:new Date().toISOString(),
+  };
+  try{
+    await fetch(`${FIREBASE_URL}/sessions/${state.sessionId}.json`,{method:'PUT',body:JSON.stringify(record)});
+    if(state.roomCode){
+      await fetch(`${FIREBASE_URL}/rooms/${state.roomCode}/${state.sessionId}.json`,{method:'PUT',body:JSON.stringify({
+        playerName:state.playerName,archetype:archetypes[idx].name,
+        nonlinearIndex:state.finalNL,totalXP:state.xp,timestamp:Date.now()
+      })});
+    }
+  }catch(e){console.error('Firebase:',e)}
+}
+
+// ============================================================
+// LEVEL UP & RESULT
+// ============================================================
+function showLevelUp(){
+  let level=levels[0];
+  for(const l of levels){if(state.xp>=l.min)level=l}
+  document.getElementById('level-emoji').textContent=level.emoji;
+  document.getElementById('level-name').textContent=level.name;
+  document.getElementById('level-desc').textContent=level.desc;
+  document.getElementById('total-pts-display').textContent=state.xp;
+  show('screen-levelup');
+}
+
+function getDominant(){
+  if(!state.answers||state.answers.length===0)return 0;
+  let max=-1,idx=0;
+  state.answers.forEach((s,i)=>{if(s>max){max=s;idx=i}});
+  return Math.min(idx, archetypes.length-1);
+}
+
+async function showResult(){
+  const idx=getDominant();
+  const arch=archetypes[idx];
+  document.getElementById('res-emoji').textContent=arch.emoji;
+  document.getElementById('res-name').textContent=arch.name;
+  document.getElementById('res-name').style.color=arch.color;
+  document.getElementById('res-tagline').textContent=arch.tagline;
+  document.getElementById('res-desc').textContent=arch.desc;
+  document.getElementById('res-strength').textContent=arch.strength;
+  document.getElementById('res-blind').textContent=arch.blind;
+  document.getElementById('res-nonlin-num').textContent=state.finalNL+'%';
+  document.getElementById('res-nonlin-bar').style.width=state.finalNL+'%';
+  const nlDesc=state.finalNL>=75?'Pensamiento altamente no lineal — tu mente opera en conexiones que pocos ven.':state.finalNL>=50?'Pensamiento mixto — capacidad no lineal que puedes desarrollar más.':'Pensamiento predominantemente lineal — hay mucho potencial creativo por detonar.';
+  document.getElementById('res-nonlin-desc').textContent=nlDesc;
+  if(state.aiInsight){
+    document.getElementById('ai-insight-text').textContent=state.aiInsight;
+    document.getElementById('ai-insight-box').classList.remove('hidden');
+  }
+  const labels=['Conquistador','Descubridor','Conector','Retador','Soñador','Experto','Reinventador','Acumulador','Solitario'];
+  document.getElementById('scores-grid').innerHTML=state.answers.map((s,i)=>`<div class="score-item"><span class="score-name">${labels[i]}</span><span class="score-val">${'█'.repeat(s)}${'░'.repeat(5-s)}</span></div>`).join('');
+
+  if(state.mode==='group'&&state.roomCode){
+    show('screen-ranking');
+    await loadRanking();
+  } else {
+    show('screen-result');
+  }
+}
+
+async function loadRanking(){
+  document.getElementById('rank-room-label').textContent=`Sala: ${state.roomCode}`;
+  try{
+    const resp=await fetch(`${FIREBASE_URL}/rooms/${state.roomCode}.json`);
+    const data=await resp.json();
+    if(!data){document.getElementById('rank-list').innerHTML='<p style="color:var(--muted)">Esperando participantes...</p>';return}
+    const players=Object.values(data).sort((a,b)=>b.nonlinearIndex-a.nonlinearIndex);
+    const medals=['🥇','🥈','🥉'];
+    const cls=['gold','silver','bronze'];
+    document.getElementById('rank-list').innerHTML=players.map((p,i)=>`
+      <div class="rank-item ${cls[i]||''}">
+        <div class="rank-pos">${medals[i]||i+1}</div>
+        <div class="rank-info"><div class="rank-name">${p.playerName}</div><div class="rank-arch">${p.archetype}</div></div>
+        <div class="rank-score">${p.nonlinearIndex}%</div>
+      </div>`).join('');
+    const dist={};
+    players.forEach(p=>{dist[p.archetype]=(dist[p.archetype]||0)+1});
+    document.getElementById('arch-dist').innerHTML=Object.entries(dist).map(([a,c])=>`<div class="arch-chip">${a} <span>×${c}</span></div>`).join('');
+  }catch(e){document.getElementById('rank-list').innerHTML='<p style="color:var(--muted)">Error cargando ranking</p>'}
+}
+</script>
+</body>
+</html>
